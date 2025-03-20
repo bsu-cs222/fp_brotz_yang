@@ -51,9 +51,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
     // 简单验证 / Simple validation
     if (name.isEmpty || brand.isEmpty || quantityStr.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('请填写所有字段')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('请填写所有字段 / Please fill in all the fields.')),
+      );
       return;
     }
     // 转换数量为整数 / Convert quantity to integer
@@ -106,6 +106,7 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           // 整体区域（使用Column布局垂直排列） 垂直排列（输入区域，列表区域）
           children: <Widget>[
+            SizedBox(height: 15),
             Row(
               // 输入区域（使用Row布局水平排列）
               children: [
