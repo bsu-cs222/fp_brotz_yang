@@ -1,11 +1,11 @@
-class DataBean {
+class Yarn {
   String name = "";
   String brand = "";
   String fiber = "";
   String color = "";
   int qty = 0;
 
-  DataBean({
+  Yarn({
     this.name = "",
     this.brand = "",
     this.fiber = "",
