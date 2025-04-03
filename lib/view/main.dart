@@ -176,17 +176,17 @@ class _MyHomePageState extends State<MyHomePage> {
                         ),
                         TextSpan(text: item.brand),
                         TextSpan(
-                          text: 'Fiber: ',
+                          text: ' Fiber: ',
                           style: TextStyle(color: Colors.blueAccent),
                         ),
                         TextSpan(text: item.fiber),
                         TextSpan(
-                          text: 'Color: ',
+                          text: ' Color: ',
                           style: TextStyle(color: Colors.blueAccent),
                         ),
                         TextSpan(text: item.color),
                         TextSpan(
-                          text: 'Quantity: ',
+                          text: ' Quantity: ',
                           style: TextStyle(color: Colors.blueAccent),
                         ),
                         TextSpan(text: '${item.qty}'),
