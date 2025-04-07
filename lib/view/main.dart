@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:flutter_echart/flutter_echart.dart';
@@ -42,7 +40,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final _fiberController = TextEditingController();
   final _colorController = TextEditingController();
   final _quantityController = TextEditingController();
-  Color _pickedColor = Colors.blue;
+  Color _pickerColor = Colors.blue;
 
   final List<Yarn> _items = [];
   List<Yarn> _displayItems = [];
@@ -63,12 +61,15 @@ class _MyHomePageState extends State<MyHomePage> {
     }
     int quantity = int.parse(quantityStr);
 
-    Yarn data = Yarn();
-    data.name = name;
-    data.brand = brand;
-    data.fiber = fiber;
-    data.color = color;
-    data.quantity = quantity;
+    Yarn data = Yarn(
+      name: name,
+      brand: brand,
+      fiber: fiber,
+      color: color,
+      quantity: quantity,
+      swatchColor: _pickerColor,
+    );
+
     _items.add(data);
 
     _nameController.clear();
@@ -89,13 +90,21 @@ class _MyHomePageState extends State<MyHomePage> {
           (context) => AlertDialog(
             title: const Text('Pick a Color'),
             content: SingleChildScrollView(
-              child: ColorPicker(
-                pickerColor: _pickedColor,
-                onColorChanged: (value) {
-                  setState(() {
-                    _pickedColor = value;
-                  });
-                },
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.5,
+                ),
+                child: ColorPicker(
+                  pickerColor: _pickerColor,
+                  onColorChanged: (color) {
+                    setState(() {
+                      _pickerColor = color;
+                    });
+                  },
+                  enableAlpha: false,
+                  showLabel: true,
+                  pickerAreaHeightPercent: 0.8,
+                ),
               ),
             ),
             actions: [
@@ -142,7 +151,7 @@ class _MyHomePageState extends State<MyHomePage> {
               onAdd: _addItem,
               onPieCharts: _pieCharts,
               onColorTap: _openColorPicker,
-              pickedColor: _pickedColor,
+              pickedColor: _pickerColor,
             ),
             Visibility(
               visible: _isPieChartVisible && _displayItems.isNotEmpty,
@@ -165,43 +174,68 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Color _getRandomColor() {
-    return Color.fromARGB(
-      255,
-      Random().nextInt(256),
-      Random().nextInt(256),
-      Random().nextInt(256),
-    );
-  }
-
   Widget _buildPieChartContainer() {
     if (_displayItems.isEmpty) return SizedBox();
-    final Map<String, int> _nameCounts = {};
+
+    final Map<String, dynamic> _colorCounts = {};
 
     _displayItems.forEach((item) {
-      _nameCounts[item.brand] = (_nameCounts[item.brand] ?? 0) + 1;
-    });
-    List<EChartPieBean> _dataList = [];
-    _nameCounts.forEach((name, count) {
-      _dataList.add(
-        EChartPieBean(title: name, number: count, color: _getRandomColor()),
-      );
+      String colorHex = item.swatchColor.value
+          .toRadixString(16)
+          .padLeft(8, '0');
+      if (_colorCounts.containsKey(colorHex)) {
+        _colorCounts[colorHex]['count'] += 1;
+      } else {
+        _colorCounts[colorHex] = {
+          'count': 1,
+          'name': item.color.isNotEmpty ? item.color : 'Unnamed',
+          'color': item.swatchColor,
+        };
+      }
     });
 
-    return PieChatWidget(
-      dataList: _dataList,
-      isBackground: true,
-      isLineText: true,
-      bgColor: Colors.white,
-      isFrontgText: true,
-      initSelect: 1,
-      openType: OpenType.ANI,
-      loopType: LoopType.DOWN_LOOP,
-      clickCallBack: (int value) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Number of brands: $value')));
-      },
+    List<EChartPieBean> _dataList =
+        _colorCounts.values.map((data) {
+          return EChartPieBean(
+            title: data['name'],
+            number: data['count'],
+            color: data['color'],
+          );
+        }).toList();
+
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        PieChatWidget(
+          dataList: _dataList,
+          isBackground: true,
+          isLineText: true,
+          bgColor: Colors.white,
+          isFrontgText: false,
+          openType: OpenType.ANI,
+          loopType: LoopType.DOWN_LOOP,
+          clickCallBack: (int value) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('Number of colors: $value')));
+          },
+        ),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+          ),
+          padding: const EdgeInsets.all(25),
+          child: const Text(
+            'Colors',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.normal,
+              color: Colors.black87,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
