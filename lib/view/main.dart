@@ -1,5 +1,12 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
-import 'package:yarn_inventory_manager/model/Yarn.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:flutter_echart/flutter_echart.dart';
+import 'package:yarn_inventory_manager/model/yarn.dart';
+import 'package:yarn_inventory_manager/view/input_row.dart';
+
+import 'yarn_list.dart';
 
 void main() {
   runApp(const MyApp());
@@ -8,7 +15,6 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -36,8 +42,11 @@ class _MyHomePageState extends State<MyHomePage> {
   final _fiberController = TextEditingController();
   final _colorController = TextEditingController();
   final _quantityController = TextEditingController();
+  Color _pickedColor = Colors.blue;
 
   final List<Yarn> _items = [];
+  List<Yarn> _displayItems = [];
+  bool _isPieChartVisible = false;
 
   void _addItem() {
     String name = _nameController.text.trim();
@@ -49,10 +58,9 @@ class _MyHomePageState extends State<MyHomePage> {
     if (name.isEmpty || brand.isEmpty || quantityStr.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Please fill in all the fields.')));
+      ).showSnackBar(SnackBar(content: Text('Please fill all fields.')));
       return;
     }
-
     int quantity = int.parse(quantityStr);
 
     Yarn data = Yarn();
@@ -60,7 +68,7 @@ class _MyHomePageState extends State<MyHomePage> {
     data.brand = brand;
     data.fiber = fiber;
     data.color = color;
-    data.qty = quantity;
+    data.quantity = quantity;
     _items.add(data);
 
     _nameController.clear();
@@ -69,7 +77,39 @@ class _MyHomePageState extends State<MyHomePage> {
     _colorController.clear();
     _quantityController.clear();
 
-    setState(() {});
+    setState(() {
+      _displayItems = List.from(_items);
+    });
+  }
+
+  void _openColorPicker() {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Pick a Color'),
+            content: SingleChildScrollView(
+              child: ColorPicker(
+                pickerColor: _pickedColor,
+                onColorChanged: (value) {
+                  setState(() {
+                    _pickedColor = value;
+                  });
+                },
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Done'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  void _pieCharts() {
+    setState(() => _isPieChartVisible = !_isPieChartVisible);
   }
 
   @override
@@ -78,19 +118,14 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Center(
-          // Center the content in the AppBar
           child: Row(
-            mainAxisSize:
-                MainAxisSize.min, // Ensures Row only takes up necessary space
+            mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.local_florist_rounded, color: Colors.white),
               SizedBox(width: 10),
               Text(widget.title),
               SizedBox(width: 10),
-              Icon(
-                Icons.local_florist_rounded, // Flower icon
-                color: Colors.white,
-              ),
+              Icon(Icons.local_florist_rounded, color: Colors.white),
             ],
           ),
         ),
@@ -98,117 +133,75 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Center(
         child: Column(
           children: <Widget>[
-            SizedBox(height: 15),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _nameController,
-                    decoration: InputDecoration(
-                      labelText: 'Name',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: TextField(
-                    controller: _brandController,
-                    decoration: InputDecoration(
-                      labelText: 'Brand',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: TextField(
-                    controller: _fiberController,
-                    decoration: InputDecoration(
-                      labelText: 'Fiber',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: TextField(
-                    controller: _colorController,
-                    decoration: InputDecoration(
-                      labelText: 'Color',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: TextField(
-                    controller: _quantityController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: 'Quantity',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                ElevatedButton(onPressed: _addItem, child: Text('Add')),
-              ],
+            InputRowView(
+              nameController: _nameController,
+              brandController: _brandController,
+              fiberController: _fiberController,
+              colorController: _colorController,
+              quantityController: _quantityController,
+              onAdd: _addItem,
+              onPieCharts: _pieCharts,
+              onColorTap: _openColorPicker,
+              pickedColor: _pickedColor,
             ),
-            ListView.builder(
-              shrinkWrap: true,
-              itemCount: _items.length,
-              itemBuilder: (context, index) {
-                final item = _items[index];
-                return ListTile(
-                  title: Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: item.name,
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                    style: TextStyle(fontSize: 16, letterSpacing: 0.5),
-                  ),
-                  subtitle: Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: 'Brand: ',
-                          style: TextStyle(color: Colors.blueAccent),
-                        ),
-                        TextSpan(text: item.brand),
-                        TextSpan(
-                          text: ' Fiber: ',
-                          style: TextStyle(color: Colors.blueAccent),
-                        ),
-                        TextSpan(text: item.fiber),
-                        TextSpan(
-                          text: ' Color: ',
-                          style: TextStyle(color: Colors.blueAccent),
-                        ),
-                        TextSpan(text: item.color),
-                        TextSpan(
-                          text: ' Quantity: ',
-                          style: TextStyle(color: Colors.blueAccent),
-                        ),
-                        TextSpan(text: '${item.qty}'),
-                      ],
-                    ),
-                    style: TextStyle(fontSize: 14, letterSpacing: 0.5),
-                  ),
+            Visibility(
+              visible: _isPieChartVisible && _displayItems.isNotEmpty,
+              maintainState: true,
+              child: Container(
+                height: 300,
+                color: Colors.blue,
+                child: _buildPieChartContainer(),
+              ),
+            ),
 
-                  trailing: IconButton(
-                    icon: Icon(Icons.cancel, color: Colors.blueAccent.shade100),
-                    onPressed: () {
-                      setState(() {
-                        _items.removeAt(index);
-                      });
-                    },
-                  ),
-                );
-              },
+            YarnListView(
+              items: _displayItems,
+              onRemove:
+                  (index) => setState(() => _displayItems.removeAt(index)),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Color _getRandomColor() {
+    return Color.fromARGB(
+      255,
+      Random().nextInt(256),
+      Random().nextInt(256),
+      Random().nextInt(256),
+    );
+  }
+
+  Widget _buildPieChartContainer() {
+    if (_displayItems.isEmpty) return SizedBox();
+    final Map<String, int> _nameCounts = {};
+
+    _displayItems.forEach((item) {
+      _nameCounts[item.brand] = (_nameCounts[item.brand] ?? 0) + 1;
+    });
+    List<EChartPieBean> _dataList = [];
+    _nameCounts.forEach((name, count) {
+      _dataList.add(
+        EChartPieBean(title: name, number: count, color: _getRandomColor()),
+      );
+    });
+
+    return PieChatWidget(
+      dataList: _dataList,
+      isBackground: true,
+      isLineText: true,
+      bgColor: Colors.white,
+      isFrontgText: true,
+      initSelect: 1,
+      openType: OpenType.ANI,
+      loopType: LoopType.DOWN_LOOP,
+      clickCallBack: (int value) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Number of brands: $value')));
+      },
     );
   }
 }
