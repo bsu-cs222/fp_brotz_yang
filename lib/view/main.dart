@@ -184,10 +184,10 @@ class _MyHomePageState extends State<MyHomePage> {
           .toRadixString(16)
           .padLeft(8, '0');
       if (_colorCounts.containsKey(colorHex)) {
-        _colorCounts[colorHex]['count'] += 1;
+        _colorCounts[colorHex]['wuantity'] += item.quantity;
       } else {
         _colorCounts[colorHex] = {
-          'count': 1,
+          'quantity': item.quantity,
           'name': item.color.isNotEmpty ? item.color : 'Unnamed',
           'color': item.swatchColor,
         };
@@ -198,7 +198,7 @@ class _MyHomePageState extends State<MyHomePage> {
         _colorCounts.values.map((data) {
           return EChartPieBean(
             title: data['name'],
-            number: data['count'],
+            number: data['quantity'],
             color: data['color'],
           );
         }).toList();
