@@ -27,74 +27,23 @@ class InputRowView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
+      padding: const EdgeInsets.all(8.0),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          Expanded(
-            flex: 2,
-            child: TextField(
-              key: Key('name'),
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Name',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ),
-          const SizedBox(width: 4),
-          Expanded(
-            flex: 2,
-            child: TextField(
-              key: Key('brand'),
-              controller: brandController,
-              decoration: const InputDecoration(
-                labelText: 'Brand',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ),
-          const SizedBox(width: 4),
-          Expanded(
-            flex: 2,
-            child: TextField(
-              key: Key('fiber'),
-              controller: fiberController,
-              decoration: const InputDecoration(
-                labelText: 'Fiber',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ),
-          const SizedBox(width: 4),
-          Expanded(
-            flex: 2,
-            child: TextField(
-              key: Key('color'),
-              controller: colorController,
-              decoration: InputDecoration(
-                labelText: 'Color',
-                suffixIcon: IconButton(
-                  icon: Icon(Icons.color_lens_rounded),
-                  onPressed: onColorTap,
-                ),
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ),
-          const SizedBox(width: 4),
-          Expanded(
+          _buildTextField('Name', nameController, flex: 2),
+          _buildTextField('Brand', brandController, flex: 2),
+          _buildTextField('Fiber', fiberController, flex: 2),
+          _buildTextField('Color', colorController, flex: 2),
+          _buildColorPicker(context),
+          _buildTextField(
+            'Quantity',
+            quantityController,
             flex: 1,
-            child: TextField(
-              key: Key('quantity'),
-              controller: quantityController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Quantity',
-                border: OutlineInputBorder(),
-              ),
-            ),
+            isNumber: true,
           ),
-          const SizedBox(width: 8),
           ElevatedButton(
             key: Key('add'),
             onPressed: onAdd,
@@ -105,6 +54,47 @@ class InputRowView extends StatelessWidget {
             onPressed: onPieCharts,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller, {
+    int flex = 1,
+    bool isNumber = false,
+  }) {
+    return SizedBox(
+      width: flex * 100,
+      child: TextField(
+        key: Key(label.toLowerCase()),
+        controller: controller,
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildColorPicker(BuildContext context) {
+    return GestureDetector(
+      onTap: onColorTap,
+      child: Container(
+        width: 200,
+        height: 60,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: pickedColor,
+          border: Border.all(color: Colors.grey),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        alignment: Alignment.centerLeft,
+        child: const Text(
+          'Color Picker',
+          style: TextStyle(color: Colors.white),
+        ),
       ),
     );
   }

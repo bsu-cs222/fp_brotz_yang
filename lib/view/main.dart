@@ -7,11 +7,11 @@ import 'package:yarn_inventory_manager/view/input_row.dart';
 import 'yarn_list.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const YarnApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class YarnApp extends StatelessWidget {
+  const YarnApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -34,18 +34,29 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
+// controller creation
 class _MyHomePageState extends State<MyHomePage> {
   final _nameController = TextEditingController();
   final _brandController = TextEditingController();
   final _fiberController = TextEditingController();
   final _colorController = TextEditingController();
   final _quantityController = TextEditingController();
-  Color _pickerColor = Colors.blue;
+  Color _pickerColor = Colors.blueAccent;
 
   final List<Yarn> _items = [];
   List<Yarn> _displayItems = [];
   bool _isPieChartVisible = false;
 
+  String _selectedSort = 'name';
+  final List<String> _sortOptions = [
+    'name',
+    'brand',
+    'color',
+    'fiber',
+    'quantity',
+  ];
+  bool _isDropdownVisible = false; // drop-down visibility
+  // adding system
   void _addItem() {
     String name = _nameController.text.trim();
     String brand = _brandController.text.trim();
@@ -59,6 +70,7 @@ class _MyHomePageState extends State<MyHomePage> {
       ).showSnackBar(SnackBar(content: Text('Please fill all fields.')));
       return;
     }
+
     int quantity = int.parse(quantityStr);
 
     Yarn data = Yarn(
@@ -80,9 +92,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
     setState(() {
       _displayItems = List.from(_items);
+      _sortItems(); // keep it sorted after adding
     });
   }
 
+  // color picker logic
   void _openColorPicker() {
     showDialog(
       context: context,
@@ -121,6 +135,27 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() => _isPieChartVisible = !_isPieChartVisible);
   }
 
+  // sorting system based on the first letter
+  void _sortItems() {
+    _displayItems.sort((a, b) {
+      switch (_selectedSort) {
+        case 'name':
+          return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        case 'brand':
+          return a.brand.toLowerCase().compareTo(b.brand.toLowerCase());
+        case 'color':
+          return a.color.toLowerCase().compareTo(b.color.toLowerCase());
+        case 'fiber':
+          return a.fiber.toLowerCase().compareTo(b.fiber.toLowerCase());
+        case 'quantity':
+          return a.quantity.compareTo(b.quantity);
+        default:
+          return 0;
+      }
+    });
+  }
+
+  // decoration
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -153,20 +188,58 @@ class _MyHomePageState extends State<MyHomePage> {
               onColorTap: _openColorPicker,
               pickedColor: _pickerColor,
             ),
+            // button to toggle dropdown visibility
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _isDropdownVisible = !_isDropdownVisible;
+                });
+              },
+              child: Text('Sort Yarn'),
+            ),
+            // dropdown menu to select sorting method
+            if (_isDropdownVisible)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: DropdownButton<String>(
+                  value: _selectedSort,
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _selectedSort = value;
+                        _sortItems();
+                      });
+                    }
+                  },
+                  items:
+                      _sortOptions.map((option) {
+                        return DropdownMenuItem(
+                          value: option,
+                          child: Text(
+                            'Sort by ${option[0].toUpperCase()}${option.substring(1)}',
+                          ),
+                        );
+                      }).toList(),
+                ),
+              ),
             Visibility(
               visible: _isPieChartVisible && _displayItems.isNotEmpty,
               maintainState: true,
               child: Container(
                 height: 300,
-                color: Colors.blue,
+                color: Colors.white,
                 child: _buildPieChartContainer(),
               ),
             ),
-
-            YarnListView(
-              items: _displayItems,
-              onRemove:
-                  (index) => setState(() => _displayItems.removeAt(index)),
+            Expanded(
+              child: YarnListView(
+                items: _displayItems,
+                onRemove:
+                    (index) => setState(() {
+                      _displayItems.removeAt(index);
+                      _sortItems(); // keep sorted after remove
+                    }),
+              ),
             ),
           ],
         ),
@@ -177,28 +250,28 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget _buildPieChartContainer() {
     if (_displayItems.isEmpty) return SizedBox();
 
-    final Map<String, dynamic> _colorCounts = {};
+    final Map<String, dynamic> colorCounts = {};
 
-    _displayItems.forEach((item) {
+    for (var item in _displayItems) {
       String colorHex = item.swatchColor.value
           .toRadixString(16)
           .padLeft(8, '0');
-      if (_colorCounts.containsKey(colorHex)) {
-        _colorCounts[colorHex]['wuantity'] += item.quantity;
+      if (colorCounts.containsKey(colorHex)) {
+        colorCounts[colorHex]['count'] += item.quantity;
       } else {
-        _colorCounts[colorHex] = {
-          'quantity': item.quantity,
+        colorCounts[colorHex] = {
+          'count': item.quantity,
           'name': item.color.isNotEmpty ? item.color : 'Unnamed',
           'color': item.swatchColor,
         };
       }
-    });
+    }
 
     List<EChartPieBean> _dataList =
-        _colorCounts.values.map((data) {
+        colorCounts.values.map((data) {
           return EChartPieBean(
             title: data['name'],
-            number: data['quantity'],
+            number: data['count'],
             color: data['color'],
           );
         }).toList();
@@ -211,7 +284,8 @@ class _MyHomePageState extends State<MyHomePage> {
           isBackground: true,
           isLineText: true,
           bgColor: Colors.white,
-          isFrontgText: false,
+          isFrontgText: true,
+          initSelect: 1,
           openType: OpenType.ANI,
           loopType: LoopType.DOWN_LOOP,
           clickCallBack: (int value) {
@@ -220,19 +294,14 @@ class _MyHomePageState extends State<MyHomePage> {
             ).showSnackBar(SnackBar(content: Text('Number of colors: $value')));
           },
         ),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-          ),
-          padding: const EdgeInsets.all(25),
-          child: const Text(
-            'Colors',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.normal,
-              color: Colors.black87,
-            ),
+        // new center circle
+        const Text(
+          'Colors',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.black54,
+            backgroundColor: Colors.white,
           ),
         ),
       ],
