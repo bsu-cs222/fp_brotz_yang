@@ -1,19 +1,18 @@
-import 'package:flutter/material.dart';
+// represents a single skein in the user's inventory
 
 class Yarn {
-  String name = "";
-  String brand = "";
-  String fiber = "";
-  String color = "";
-  int quantity = 0;
-  Color swatchColor;
+  final String _name;
+  final String _color;
+  final int _weight;
+  final String _fiber;
+  final int _quantity;
+  final String _brand;
 
-  Yarn({
-    this.name = "",
-    this.brand = "",
-    this.fiber = "",
-    this.color = "",
-    this.quantity = 0,
-    this.swatchColor = Colors.blue,
-  });
+  Yarn({required name, color, weight, fiber, quantity, brand})
+    : _name = name,
+      _color = color,
+      _weight = weight,
+      _fiber = fiber,
+      _quantity = quantity,
+      _brand = brand;
 }
