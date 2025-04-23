@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:yarn_inventory_manager/model/yarn.dart';
 
 void main() {
-  test('Yarn object is created', () {
+  test('Yarn object is created with correct values', () {
     final yarn = Yarn(
       name: 'Super Soft Yarn',
       brand: 'YarnCo',
