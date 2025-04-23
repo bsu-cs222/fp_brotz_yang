@@ -15,4 +15,11 @@ class Yarn {
       _fiber = fiber,
       _quantity = quantity,
       _brand = brand;
+
+  String get name => _name;
+  String get color => _color;
+  int get weight => _weight;
+  String get fiber => _fiber;
+  int get quantity => _quantity;
+  String get brand => _brand;
 }
