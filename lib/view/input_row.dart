@@ -44,15 +44,8 @@ class InputRowView extends StatelessWidget {
             flex: 1,
             isNumber: true,
           ),
-          ElevatedButton(
-            key: Key('add'),
-            onPressed: onAdd,
-            child: const Text('Add'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.pie_chart_rounded, color: Colors.blueAccent),
-            onPressed: onPieCharts,
-          ),
+          _buildAddButton(),
+          _buildPieChartButton(),
         ],
       ),
     );
@@ -78,6 +71,7 @@ class InputRowView extends StatelessWidget {
     );
   }
 
+  // Creates a Color Picker button to select the color
   Widget _buildColorPicker(BuildContext context) {
     return GestureDetector(
       onTap: onColorTap,
@@ -96,6 +90,23 @@ class InputRowView extends StatelessWidget {
           style: TextStyle(color: Colors.white),
         ),
       ),
+    );
+  }
+
+  // Adds the 'Add' button
+  Widget _buildAddButton() {
+    return ElevatedButton(
+      key: Key('add'),
+      onPressed: onAdd,
+      child: const Text('Add'),
+    );
+  }
+
+  // Adds the 'Pie Charts' button
+  Widget _buildPieChartButton() {
+    return IconButton(
+      icon: const Icon(Icons.pie_chart_rounded, color: Colors.blueAccent),
+      onPressed: onPieCharts,
     );
   }
 }

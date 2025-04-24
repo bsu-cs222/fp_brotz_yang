@@ -1,9 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:flutter_echart/flutter_echart.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:yarn_inventory_manager/model/yarn.dart';
-import 'package:yarn_inventory_manager/view/input_row.dart';
 
+import 'input_row.dart';
 import 'yarn_list.dart';
 
 void main() {
@@ -27,14 +30,12 @@ class YarnApp extends StatelessWidget {
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
-
   final String title;
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-// controller creation
 class _MyHomePageState extends State<MyHomePage> {
   final _nameController = TextEditingController();
   final _brandController = TextEditingController();
@@ -43,7 +44,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final _quantityController = TextEditingController();
   Color _pickerColor = Colors.blueAccent;
 
-  final List<Yarn> _items = [];
+  List<Yarn> _items = [];
   List<Yarn> _displayItems = [];
   bool _isPieChartVisible = false;
 
@@ -55,8 +56,14 @@ class _MyHomePageState extends State<MyHomePage> {
     'fiber',
     'quantity',
   ];
-  bool _isDropdownVisible = false; // drop-down visibility
-  // adding system
+  bool _isDropdownVisible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFromSP();
+  }
+
   void _addItem() {
     String name = _nameController.text.trim();
     String brand = _brandController.text.trim();
@@ -67,11 +74,17 @@ class _MyHomePageState extends State<MyHomePage> {
     if (name.isEmpty || brand.isEmpty || quantityStr.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Please fill all fields.')));
+      ).showSnackBar(const SnackBar(content: Text('Please fill all fields.')));
       return;
     }
 
-    int quantity = int.parse(quantityStr);
+    int quantity = int.tryParse(quantityStr) ?? 0;
+    if (quantity <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Quantity must be a positive number.')),
+      );
+      return;
+    }
 
     Yarn data = Yarn(
       name: name,
@@ -82,21 +95,23 @@ class _MyHomePageState extends State<MyHomePage> {
       swatchColor: _pickerColor,
     );
 
-    _items.add(data);
+    setState(() {
+      _items.add(data);
+      _displayItems = List.from(_items);
+      _sortItems();
+    });
+    _saveToSP();
+    _clearControllers();
+  }
 
+  void _clearControllers() {
     _nameController.clear();
     _brandController.clear();
     _fiberController.clear();
     _colorController.clear();
     _quantityController.clear();
-
-    setState(() {
-      _displayItems = List.from(_items);
-      _sortItems(); // keep it sorted after adding
-    });
   }
 
-  // color picker logic
   void _openColorPicker() {
     showDialog(
       context: context,
@@ -116,7 +131,6 @@ class _MyHomePageState extends State<MyHomePage> {
                     });
                   },
                   enableAlpha: false,
-                  showLabel: true,
                   pickerAreaHeightPercent: 0.8,
                 ),
               ),
@@ -135,7 +149,6 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() => _isPieChartVisible = !_isPieChartVisible);
   }
 
-  // sorting system based on the first letter
   void _sortItems() {
     _displayItems.sort((a, b) {
       switch (_selectedSort) {
@@ -155,7 +168,29 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  // decoration
+  Future<void> _loadFromSP() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString('yarnItems');
+    if (jsonString != null) {
+      try {
+        final List<dynamic> jsonList = jsonDecode(jsonString);
+        setState(() {
+          _items = jsonList.map((json) => Yarn.fromJson(json)).toList();
+          _displayItems = List.from(_items);
+          _sortItems();
+        });
+      } catch (e, stack) {
+        throw ArgumentError('Error.');
+      }
+    }
+  }
+
+  Future<void> _saveToSP() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonList = _items.map((item) => item.toJson()).toList();
+    await prefs.setString('yarnItems', jsonEncode(jsonList));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -165,11 +200,11 @@ class _MyHomePageState extends State<MyHomePage> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.local_florist_rounded, color: Colors.white),
-              SizedBox(width: 10),
+              const Icon(Icons.local_florist_rounded, color: Colors.white),
+              const SizedBox(width: 10),
               Text(widget.title),
-              SizedBox(width: 10),
-              Icon(Icons.local_florist_rounded, color: Colors.white),
+              const SizedBox(width: 10),
+              const Icon(Icons.local_florist_rounded, color: Colors.white),
             ],
           ),
         ),
@@ -188,16 +223,14 @@ class _MyHomePageState extends State<MyHomePage> {
               onColorTap: _openColorPicker,
               pickedColor: _pickerColor,
             ),
-            // button to toggle dropdown visibility
             ElevatedButton(
               onPressed: () {
                 setState(() {
                   _isDropdownVisible = !_isDropdownVisible;
                 });
               },
-              child: Text('Sort Yarn'),
+              child: const Text('Sort Yarn'),
             ),
-            // dropdown menu to select sorting method
             if (_isDropdownVisible)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -234,11 +267,13 @@ class _MyHomePageState extends State<MyHomePage> {
             Expanded(
               child: YarnListView(
                 items: _displayItems,
-                onRemove:
-                    (index) => setState(() {
-                      _displayItems.removeAt(index);
-                      _sortItems(); // keep sorted after remove
-                    }),
+                onRemove: (index) {
+                  setState(() {
+                    _displayItems.removeAt(index);
+                    _saveToSP();
+                    _sortItems();
+                  });
+                },
               ),
             ),
           ],
@@ -248,10 +283,9 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget _buildPieChartContainer() {
-    if (_displayItems.isEmpty) return SizedBox();
+    if (_displayItems.isEmpty) return const SizedBox();
 
     final Map<String, dynamic> colorCounts = {};
-
     for (var item in _displayItems) {
       String colorHex = item.swatchColor.value
           .toRadixString(16)
@@ -267,7 +301,7 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     }
 
-    List<EChartPieBean> _dataList =
+    List<EChartPieBean> dataList =
         colorCounts.values.map((data) {
           return EChartPieBean(
             title: data['name'],
@@ -280,28 +314,21 @@ class _MyHomePageState extends State<MyHomePage> {
       alignment: Alignment.center,
       children: [
         PieChatWidget(
-          dataList: _dataList,
+          dataList: dataList,
           isBackground: true,
           isLineText: true,
           bgColor: Colors.white,
-          isFrontgText: true,
+          isFrontgText: false,
           initSelect: 1,
           openType: OpenType.ANI,
           loopType: LoopType.DOWN_LOOP,
-          clickCallBack: (int value) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text('Number of colors: $value')));
-          },
         ),
-        // new center circle
-        const Text(
-          'Colors',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.black54,
-            backgroundColor: Colors.white,
+        ClipOval(
+          child: Image.asset(
+            'assets/images/yarn.jpg',
+            width: 120,
+            height: 120,
+            fit: BoxFit.cover,
           ),
         ),
       ],

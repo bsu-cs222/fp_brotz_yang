@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:yarn_inventory_manager/model/yarn.dart';
 
@@ -8,6 +9,7 @@ void main() {
       brand: 'YarnCo',
       fiber: 'Wool',
       color: 'Blue',
+      swatchColor: Colors.blue,
       quantity: 5,
     );
 
