@@ -1,32 +1,43 @@
-// Represents a single skein in the user's inventory
 import 'package:flutter/material.dart';
 
 class Yarn {
-  final String _name;
-  final String _color;
-  final Color _swatchColor;
-  final String _fiber;
-  final int _quantity;
-  final String _brand;
+  String name;
+  String brand;
+  String fiber;
+  String color;
+  int quantity;
+  Color swatchColor;
 
   Yarn({
-    required String name,
-    required String color,
-    required Color swatchColor,
-    required String fiber,
-    required int quantity,
-    required String brand,
-  }) : _name = name,
-       _color = color,
-       _swatchColor = swatchColor,
-       _fiber = fiber,
-       _quantity = quantity,
-       _brand = brand;
+    required this.name,
+    required this.brand,
+    required this.fiber,
+    required this.color,
+    required this.quantity,
+    required this.swatchColor,
+  });
 
-  String get name => _name;
-  String get color => _color;
-  Color get swatchColor => _swatchColor;
-  String get fiber => _fiber;
-  int get quantity => _quantity;
-  String get brand => _brand;
+  // From JSON constructor
+  factory Yarn.fromJson(Map<String, dynamic> json) {
+    return Yarn(
+      name: json['name'],
+      brand: json['brand'],
+      fiber: json['fiber'],
+      color: json['color'],
+      quantity: json['quantity'],
+      swatchColor: Color(json['swatchColor']),
+    );
+  }
+
+  // To JSON method
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'brand': brand,
+      'fiber': fiber,
+      'color': color,
+      'quantity': quantity,
+      'swatchColor': swatchColor.value,
+    };
+  }
 }
