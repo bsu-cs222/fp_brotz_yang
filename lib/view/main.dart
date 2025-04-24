@@ -179,7 +179,7 @@ class _MyHomePageState extends State<MyHomePage> {
           _displayItems = List.from(_items);
           _sortItems();
         });
-      } catch (e, stack) {
+      } catch (e) {
         throw ArgumentError('Error.');
       }
     }
@@ -287,7 +287,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
     final Map<String, dynamic> colorCounts = {};
     for (var item in _displayItems) {
-      String colorHex = item.swatchColor.value
+      String colorHex = item.swatchColor
+          .toARGB32()
           .toRadixString(16)
           .padLeft(8, '0');
       if (colorCounts.containsKey(colorHex)) {

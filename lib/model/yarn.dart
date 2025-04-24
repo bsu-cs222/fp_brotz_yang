@@ -37,7 +37,7 @@ class Yarn {
       'fiber': fiber,
       'color': color,
       'quantity': quantity,
-      'swatchColor': swatchColor.value,
+      'swatchColor': swatchColor.toARGB32(),
     };
   }
 }
